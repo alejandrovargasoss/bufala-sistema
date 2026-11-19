@@ -17,11 +17,29 @@
     .tabs { display: flex; gap: 8px; margin-bottom: 20px; background: var(--gris-bg); padding: 4px; border-radius: 10px; }
     .tabs button { flex: 1; padding: 8px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; background: transparent; color: var(--texto); transition: 0.2s; }
     .tabs button.active { background: white; color: var(--verde-sena); box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    .password-wrap { position: relative; }
+    .password-wrap input { padding-right: 42px; }
+    .toggle-pass {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #6B7280;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      padding: 0;
+    }
+    .toggle-pass:hover { color: var(--verde-sena); }
   </style>
 </head>
 <body>
 <div class="auth-box" x-data="{
   modo: 'login',
+  verPass: false,
   cargando: false,
   mensaje: '',
   tipoMsg: 'danger',
@@ -79,7 +97,12 @@
     </div>
     <div class="form-group">
       <label>Contraseña</label>
-      <input type="password" x-model="form.password" required placeholder="••••••••">
+      <div class="password-wrap">
+        <input :type="verPass ? 'text' : 'password'" x-model="form.password" required placeholder="••••••••">
+        <button type="button" class="toggle-pass" @click="verPass = !verPass" :title="verPass ? 'Ocultar contraseña' : 'Ver contraseña'">
+          <i :class="verPass ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+        </button>
+      </div>
     </div>
     <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px;" :disabled="cargando">
       <span x-text="cargando ? 'Procesando...' : (modo==='login' ? 'Ingresar al Sistema' : 'Registrarme y Entrar')"></span>
