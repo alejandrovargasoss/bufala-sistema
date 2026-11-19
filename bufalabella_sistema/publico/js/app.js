@@ -216,7 +216,7 @@ function clientesApp() {
   };
 }
 
-// VENTAS (Multi-producto con cálculo automático)
+// VENTAS (Multi-producto con cálculo automático y pagos PSE / Tarjetas)
 function ventasApp() {
   return {
     ventas:            [],
@@ -224,13 +224,23 @@ function ventasApp() {
     productos:         [],
     cargando:          true,
     mostrarModal:      false,
+    mostrarPasarela:   false,
     mostrarDetalle:    false,
+    refTransaccion:    '',
     ventaSeleccionada: null,
     detalleItems:      [],
     mensaje:           '',
     tipoMsg:           'success',
     itemTemp:          { id_producto: '', cantidad: 1 },
-    form:              { id_cliente: '', estado: 'completada', observacion: '', items: [] },
+    form:              { id_cliente: '', estado: 'completada', metodo_pago: 'PSE', banco_pse: 'Bancolombia', tipo_persona: 'Natural', franquicia: 'Visa', ref_tarjeta: '', observacion: '', items: [] },
+
+    extraerMetodoPago(obs) {
+      if (!obs) return '💵 Efectivo';
+      if (obs.includes('[PSE')) return '🏦 PSE';
+      if (obs.includes('[Tarjeta')) return '💳 Tarjeta';
+      if (obs.includes('[Nequi')) return '📱 Nequi/Daviplata';
+      return '💵 Efectivo';
+    },
 
     get productosDisponibles() {
       return this.productos.filter(p => Number(p.stock) > 0);
@@ -267,7 +277,7 @@ function ventasApp() {
 
     async abrirFormulario() {
       await this.cargarAuxiliares();
-      this.form         = { id_cliente: '', estado: 'completada', observacion: '', items: [] };
+      this.form         = { id_cliente: '', estado: 'completada', metodo_pago: 'PSE', banco_pse: 'Bancolombia', tipo_persona: 'Natural', franquicia: 'Visa', ref_tarjeta: '', observacion: '', items: [] };
       this.itemTemp     = { id_producto: '', cantidad: 1 };
       this.mostrarModal = true;
     },
@@ -316,11 +326,34 @@ function ventasApp() {
       if (this.form.items.length === 0) {
         crearAlerta(this, 'Agrega al menos un producto a la venta.', 'warning'); return;
       }
+      if (this.form.metodo_pago === 'PSE' || this.form.metodo_pago === 'Tarjeta Crédito / Débito') {
+        this.refTransaccion = Math.floor(100000 + Math.random() * 900000).toString();
+        this.mostrarPasarela = true;
+        return;
+      }
+      await this.enviarVentaServidor('');
+    },
+
+    async confirmarPagoPasarela() {
+      this.mostrarPasarela = false;
+      const detallePago = this.form.metodo_pago === 'PSE'
+        ? `[PSE · ${this.form.banco_pse} (${this.form.tipo_persona}) · Ref: DBUF-${this.refTransaccion}]`
+        : `[Tarjeta ${this.form.franquicia} ${this.form.ref_tarjeta} · Ref: DBUF-${this.refTransaccion}]`;
+      await this.enviarVentaServidor(detallePago);
+    },
+
+    async enviarVentaServidor(prefijoPago) {
+      let tag = prefijoPago;
+      if (!tag) {
+        tag = this.form.metodo_pago === 'Nequi / Daviplata' ? '[Nequi / Daviplata]' : '[Efectivo]';
+      }
+      const obsFinal = `${tag} ${this.form.observacion || ''}`.trim();
+      const payload = { ...this.form, observacion: obsFinal };
       try {
         const res  = await fetch(`${API}?modulo=ventas&accion=guardar`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(this.form),
+          body: JSON.stringify(payload),
         });
         const json = await res.json();
         crearAlerta(this, json.mensaje, json.ok ? 'success' : 'danger');

@@ -25,7 +25,7 @@
   cargando: false,
   mensaje: '',
   tipoMsg: 'danger',
-  form: { nombre: '', email: 'admin@bufalabella.com', password: 'password' },
+  form: { nombre: '', email: '', password: '' },
   async enviar() {
     this.cargando = true;
     this.mensaje = '';
@@ -87,7 +87,7 @@
   </form>
 
   <p style="text-align:center; font-size:12px; color:#7A7A72; margin-top:18px;">
-    Acceso demo: <strong>admin@bufalabella.com</strong> / <strong>password</strong>
+    🔒 Acceso exclusivo personal autorizado · Bufalabella S.A.S.
   </p>
 </div>
 </body>
