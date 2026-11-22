@@ -1,11 +1,10 @@
 /**
- * app.js - Funciones Alpine.js Dibufala S.A.S. (El Rosal, Cundinamarca)
- * CRUD + Ventas Multi-producto + Generación Automática de Factura + IA Gemini
+ * app.js - Dibufala S.A.S. (El Rosal, Cundinamarca) v2.0
+ * CRUD + Ventas + Logística Cadena de Frío + Factura Automática + IA
  */
 
 const API = (window.APP_BASE_URL || '') + '/index.php';
 
-/** Helper para mostrar alertas */
 function crearAlerta(ctx, mensaje, tipo = 'success') {
   ctx.mensaje = mensaje;
   ctx.tipoMsg = tipo;
@@ -216,7 +215,7 @@ function clientesApp() {
   };
 }
 
-// VENTAS + FACTURACIÓN AUTOMÁTICA DIBUFALA S.A.S.
+// VENTAS + LOGÍSTICA CADENA DE FRÍO + FACTURA AUTOMÁTICA DIBUFALA S.A.S.
 function ventasApp() {
   return {
     ventas:            [],
@@ -234,7 +233,7 @@ function ventasApp() {
     mensaje:           '',
     tipoMsg:           'success',
     itemTemp:          { id_producto: '', cantidad: 1 },
-    form:              { id_cliente: '', estado: 'completada', metodo_pago: 'PSE', banco_pse: 'Bancolombia', tipo_persona: 'Natural', franquicia: 'Visa', ref_tarjeta: '', observacion: '', items: [] },
+    form:              { id_cliente: '', estado: 'completada', ruta_entrega: 'Planta El Rosal', metodo_pago: 'PSE', banco_pse: 'Bancolombia', tipo_persona: 'Natural', franquicia: 'Visa', ref_tarjeta: '', observacion: '', items: [] },
 
     extraerMetodoPago(obs) {
       if (!obs) return '💵 Efectivo';
@@ -242,6 +241,12 @@ function ventasApp() {
       if (obs.includes('[Tarjeta')) return '💳 Tarjeta';
       if (obs.includes('[Nequi')) return '📱 Nequi/Daviplata';
       return '💵 Efectivo';
+    },
+
+    extraerRuta(obs) {
+      if (!obs) return '📍 Planta El Rosal';
+      const match = obs.match(/\{Ruta:\s*([^}]+)\}/);
+      return match ? '🚚 ' + match[1] : '📍 Planta El Rosal';
     },
 
     get productosDisponibles() {
@@ -279,7 +284,7 @@ function ventasApp() {
 
     async abrirFormulario() {
       await this.cargarAuxiliares();
-      this.form         = { id_cliente: '', estado: 'completada', metodo_pago: 'PSE', banco_pse: 'Bancolombia', tipo_persona: 'Natural', franquicia: 'Visa', ref_tarjeta: '', observacion: '', items: [] };
+      this.form         = { id_cliente: '', estado: 'completada', ruta_entrega: 'Planta El Rosal', metodo_pago: 'PSE', banco_pse: 'Bancolombia', tipo_persona: 'Natural', franquicia: 'Visa', ref_tarjeta: '', observacion: '', items: [] };
       this.itemTemp     = { id_producto: '', cantidad: 1 };
       this.mostrarModal = true;
     },
@@ -349,7 +354,8 @@ function ventasApp() {
       if (!tag) {
         tag = this.form.metodo_pago === 'Nequi / Daviplata' ? '[Nequi / Daviplata]' : '[Efectivo]';
       }
-      const obsFinal = `${tag} ${this.form.observacion || ''}`.trim();
+      const rutaTag = `{Ruta: ${this.form.ruta_entrega}}`;
+      const obsFinal = `${tag} ${rutaTag} ${this.form.observacion || ''}`.trim();
       const payload = { ...this.form, observacion: obsFinal };
 
       const clienteObj = this.clientes.find(c => Number(c.id) === Number(this.form.id_cliente));
