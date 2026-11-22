@@ -3,18 +3,18 @@
     <div :class="`alert alert-${tipoMsg}`" x-text="mensaje"></div>
   </template>
   <div class="card-header">
-    <h2>🛒 Registro de Pedidos y Ventas</h2>
-    <button class="btn btn-primary" @click="abrirFormulario()"><i class="bi bi-plus-lg"></i> Nueva Venta</button>
+    <h2>🧾 Registro de Ventas y Facturación · Dibufala S.A.S.</h2>
+    <button class="btn btn-primary" @click="abrirFormulario()"><i class="bi bi-plus-lg"></i> Nueva Venta y Factura</button>
   </div>
   <div class="card-body">
     <div x-show="cargando" class="spinner-wrap"><div class="spinner"></div> Cargando ventas...</div>
     <div x-show="!cargando" class="table-responsive">
       <table>
-        <thead><tr><th>#</th><th>Cliente</th><th>Fecha</th><th>Método de Pago</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Factura</th><th>Cliente</th><th>Fecha</th><th>Método de Pago</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody>
           <template x-for="v in ventas" :key="v.id">
             <tr>
-              <td><strong x-text="'#'+v.id"></strong></td>
+              <td><strong style="color:#1F513B;" x-text="'FAC-' + String(v.id).padStart(4, '0')"></strong></td>
               <td x-text="v.cliente || 'Cliente #' + v.id_cliente"></td>
               <td x-text="v.fecha"></td>
               <td>
@@ -25,8 +25,9 @@
                 <span :class="v.estado==='completada'?'badge badge-success':v.estado==='pendiente'?'badge badge-warning':'badge badge-danger'"
                       x-text="v.estado"></span>
               </td>
-              <td style="display:flex; gap:6px;">
-                <button class="btn btn-secondary btn-sm" @click="verDetalle(v)" title="Ver productos"><i class="bi bi-eye"></i></button>
+              <td style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button class="btn btn-gold btn-sm" @click="abrirFactura(v)" title="Ver e imprimir factura"><i class="bi bi-printer-fill"></i> Factura</button>
+                <button class="btn btn-secondary btn-sm" @click="verDetalle(v)" title="Ver detalle"><i class="bi bi-eye"></i></button>
                 <button x-show="v.estado==='pendiente'" class="btn btn-primary btn-sm" @click="completar(v.id)" title="Confirmar pago"><i class="bi bi-check-lg"></i></button>
                 <button x-show="v.estado!=='cancelada'" class="btn btn-danger btn-sm" @click="cancelar(v.id)">Cancelar</button>
               </td>
@@ -44,7 +45,7 @@
   <div class="modal-overlay" x-show="mostrarModal" x-cloak>
     <div class="modal" style="max-width: 720px;">
       <div class="modal-header">
-        <h3>🛒 Registrar Nueva Venta y Pago</h3>
+        <h3>🛒 Registrar Nueva Venta y Generar Factura</h3>
         <button class="btn-close" @click="cerrarModal()">✕</button>
       </div>
       <div class="modal-body">
@@ -67,35 +68,35 @@
           </div>
         </div>
 
-        <!-- Selector de Método de Pago (PSE / Tarjetas / Efectivo / Transferencia) -->
+        <!-- Selector de Método de Pago -->
         <div class="form-group">
           <label>💳 Método de Pago *</label>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:8px;">
             <button type="button" @click="form.metodo_pago='PSE'"
-              :style="form.metodo_pago==='PSE' ? 'border:2px solid #2D6A4F; background:#E8F3EE; color:#1B4332; font-weight:700;' : 'border:1px solid #E6E1D8; background:#FFF; color:#4A4A45;'"
-              style="padding:10px; border-radius:8px; cursor:pointer; font-size:13px; text-align:center;">
+              :style="form.metodo_pago==='PSE' ? 'border:2px solid #1F513B; background:#E6F2EC; color:#122B20; font-weight:700;' : 'border:1px solid #E5DFD3; background:#FFF; color:#3F423E;'"
+              style="padding:10px; border-radius:10px; cursor:pointer; font-size:13px; text-align:center;">
               🏦 PSE (Bancos)
             </button>
             <button type="button" @click="form.metodo_pago='Tarjeta Crédito / Débito'"
-              :style="form.metodo_pago==='Tarjeta Crédito / Débito' ? 'border:2px solid #2D6A4F; background:#E8F3EE; color:#1B4332; font-weight:700;' : 'border:1px solid #E6E1D8; background:#FFF; color:#4A4A45;'"
-              style="padding:10px; border-radius:8px; cursor:pointer; font-size:13px; text-align:center;">
+              :style="form.metodo_pago==='Tarjeta Crédito / Débito' ? 'border:2px solid #1F513B; background:#E6F2EC; color:#122B20; font-weight:700;' : 'border:1px solid #E5DFD3; background:#FFF; color:#3F423E;'"
+              style="padding:10px; border-radius:10px; cursor:pointer; font-size:13px; text-align:center;">
               💳 Tarjeta Créd/Déb
             </button>
             <button type="button" @click="form.metodo_pago='Nequi / Daviplata'"
-              :style="form.metodo_pago==='Nequi / Daviplata' ? 'border:2px solid #2D6A4F; background:#E8F3EE; color:#1B4332; font-weight:700;' : 'border:1px solid #E6E1D8; background:#FFF; color:#4A4A45;'"
-              style="padding:10px; border-radius:8px; cursor:pointer; font-size:13px; text-align:center;">
+              :style="form.metodo_pago==='Nequi / Daviplata' ? 'border:2px solid #1F513B; background:#E6F2EC; color:#122B20; font-weight:700;' : 'border:1px solid #E5DFD3; background:#FFF; color:#3F423E;'"
+              style="padding:10px; border-radius:10px; cursor:pointer; font-size:13px; text-align:center;">
               📱 Nequi / Daviplata
             </button>
             <button type="button" @click="form.metodo_pago='Efectivo'"
-              :style="form.metodo_pago==='Efectivo' ? 'border:2px solid #2D6A4F; background:#E8F3EE; color:#1B4332; font-weight:700;' : 'border:1px solid #E6E1D8; background:#FFF; color:#4A4A45;'"
-              style="padding:10px; border-radius:8px; cursor:pointer; font-size:13px; text-align:center;">
+              :style="form.metodo_pago==='Efectivo' ? 'border:2px solid #1F513B; background:#E6F2EC; color:#122B20; font-weight:700;' : 'border:1px solid #E5DFD3; background:#FFF; color:#3F423E;'"
+              style="padding:10px; border-radius:10px; cursor:pointer; font-size:13px; text-align:center;">
               💵 Efectivo
             </button>
           </div>
         </div>
 
         <!-- Campos dinámicos según PSE o Tarjeta -->
-        <div x-show="form.metodo_pago==='PSE'" style="background:#F0FDF4; border:1px solid #BBF7D0; padding:12px; border-radius:8px; margin-bottom:14px;">
+        <div x-show="form.metodo_pago==='PSE'" style="background:#F0FDF4; border:1px solid #BBF7D0; padding:12px; border-radius:10px; margin-bottom:14px;">
           <div class="form-grid-2">
             <div class="form-group" style="margin-bottom:0;">
               <label style="font-size:12px;">Banco PSE *</label>
@@ -119,7 +120,7 @@
           </div>
         </div>
 
-        <div x-show="form.metodo_pago==='Tarjeta Crédito / Débito'" style="background:#FFFBEB; border:1px solid #FDE68A; padding:12px; border-radius:8px; margin-bottom:14px;">
+        <div x-show="form.metodo_pago==='Tarjeta Crédito / Débito'" style="background:#FFFBEB; border:1px solid #FDE68A; padding:12px; border-radius:10px; margin-bottom:14px;">
           <div class="form-grid-2">
             <div class="form-group" style="margin-bottom:0;">
               <label style="font-size:12px;">Franquicia</label>
@@ -138,8 +139,8 @@
         </div>
 
         <!-- Agregar productos al carrito -->
-        <div style="background:#FAF8F5; padding:14px; border-radius:10px; border:1px solid #E6E1D8; margin-bottom:16px;">
-          <label style="display:block; font-size:13px; font-weight:700; margin-bottom:8px; color:#1C2420;">Agregar productos lácteos al pedido</label>
+        <div style="background:#F7F5F0; padding:14px; border-radius:12px; border:1px solid #E5DFD3; margin-bottom:16px;">
+          <label style="display:block; font-size:13px; font-weight:700; margin-bottom:8px; color:#16221C;">Agregar productos lácteos al pedido</label>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <select x-model="itemTemp.id_producto" style="flex:2; min-width:200px; padding:8px; border-radius:8px; border:1px solid #CBD5E1;">
               <option value="">-- Elegir producto disponible --</option>
@@ -151,7 +152,6 @@
             <button type="button" class="btn btn-primary btn-sm" @click="agregarItem()">+ Agregar</button>
           </div>
 
-          <!-- Lista de productos agregados -->
           <div x-show="form.items.length > 0" style="margin-top:12px;">
             <table style="font-size:13px;">
               <thead><tr><th>Producto</th><th>Cant.</th><th>Precio Unit.</th><th>Subtotal</th><th></th></tr></thead>
@@ -167,8 +167,8 @@
                 </template>
               </tbody>
             </table>
-            <div style="text-align:right; margin-top:10px; font-size:16px; font-weight:800; color:#1C2420;">
-              Total a pagar (<span x-text="form.metodo_pago"></span>): <span style="color:#2D6A4F;" x-text="'$' + totalVenta.toLocaleString('es-CO')"></span>
+            <div style="text-align:right; margin-top:10px; font-size:16px; font-weight:800; color:#16221C;">
+              Total a facturar (<span x-text="form.metodo_pago"></span>): <span style="color:#1F513B;" x-text="'$' + totalVenta.toLocaleString('es-CO')"></span>
             </div>
           </div>
         </div>
@@ -181,35 +181,134 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" @click="cerrarModal()">Cancelar</button>
         <button class="btn btn-primary" @click="guardar()">
-          <span x-text="form.metodo_pago==='PSE' || form.metodo_pago==='Tarjeta Crédito / Débito' ? '💳 Procesar Pago y Registrar' : '✅ Confirmar y Registrar Venta'"></span>
+          <span x-text="form.metodo_pago==='PSE' || form.metodo_pago==='Tarjeta Crédito / Débito' ? '💳 Procesar Pago y Facturar' : '🧾 Confirmar y Generar Factura'"></span>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Modal Pasarela de Pago PSE / Tarjeta (Simulador de Checkout listo para Wompi/ePayco) -->
+  <!-- Modal Pasarela de Pago PSE / Tarjeta -->
   <div class="modal-overlay" x-show="mostrarPasarela" x-cloak>
     <div class="modal" style="max-width: 440px; text-align:center;">
       <div class="modal-header">
-        <h3>🔒 Pasarela de Pago Segura · Bufalabella</h3>
+        <h3>🔒 Pasarela de Pago Segura · Dibufala S.A.S.</h3>
         <button class="btn-close" @click="mostrarPasarela=false">✕</button>
       </div>
       <div class="modal-body" style="padding:24px;">
         <div style="font-size:40px; margin-bottom:10px;" x-text="form.metodo_pago==='PSE' ? '🏦' : '💳'"></div>
-        <h4 style="color:#1B4332; margin-bottom:6px;" x-text="'Pago vía ' + form.metodo_pago"></h4>
+        <h4 style="color:#122B20; margin-bottom:6px;" x-text="'Pago vía ' + form.metodo_pago"></h4>
         <p style="font-size:13px; color:#6B7280; margin-bottom:14px;" x-text="form.metodo_pago==='PSE' ? ('Banco seleccionado: ' + form.banco_pse + ' (' + form.tipo_persona + ')') : ('Franquicia: ' + form.franquicia)"></p>
-        <div style="background:#FAF8F5; border:1px solid #E6E1D8; border-radius:10px; padding:14px; margin-bottom:16px;">
-          <span style="font-size:12px; color:#7A7A72;">Monto a debitar</span>
-          <div style="font-size:24px; font-weight:800; color:#2D6A4F;" x-text="'$' + totalVenta.toLocaleString('es-CO') + ' COP'"></div>
-          <span style="font-size:11px; color:#8A6914;" x-text="'Ref. Transacción: DBUF-' + refTransaccion"></span>
+        <div style="background:#F7F5F0; border:1px solid #E5DFD3; border-radius:10px; padding:14px; margin-bottom:16px;">
+          <span style="font-size:12px; color:#75756E;">Monto a debitar</span>
+          <div style="font-size:24px; font-weight:800; color:#1F513B;" x-text="'$' + totalVenta.toLocaleString('es-CO') + ' COP'"></div>
+          <span style="font-size:11px; color:#8A6214;" x-text="'Ref. Transacción: DBUF-' + refTransaccion"></span>
         </div>
-        <p style="font-size:12px; color:#7A7A72; margin-bottom:16px;">
-          Al aprobar, se registrará el comprobante electrónico y se descontará el inventario automáticamente.
+        <p style="font-size:12px; color:#75756E; margin-bottom:16px;">
+          Al aprobar, se emitirá automáticamente la factura electrónica de Dibufala S.A.S. y se descontará el inventario.
         </p>
         <div style="display:flex; gap:10px; justify-content:center;">
           <button class="btn btn-secondary" @click="mostrarPasarela=false">Cancelar</button>
-          <button class="btn btn-primary" @click="confirmarPagoPasarela()">✅ Aprobar Transacción</button>
+          <button class="btn btn-primary" @click="confirmarPagoPasarela()">✅ Aprobar y Emitir Factura</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE FACTURA OFICIAL IMPRIMIBLE (SE ABRE AUTOMÁTICAMENTE AL COMPRAR) -->
+  <div class="modal-overlay" x-show="mostrarFactura" x-cloak>
+    <div class="modal" style="max-width: 760px;">
+      <div class="modal-header no-print">
+        <h3>🧾 Factura Electrónica Generada · Dibufala S.A.S.</h3>
+        <button class="btn-close" @click="mostrarFactura=false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="area-impresion-factura" class="factura-sheet" x-if="facturaActual">
+          <div class="factura-top">
+            <div class="factura-brand">
+              <h2>🐃 DIBUFALA S.A.S.</h2>
+              <p>
+                <strong>Productos Lácteos 100% Leche de Búfala · Calidad Artesanal</strong><br>
+                NIT: 900.845.219-7 · Régimen Común · Resolución DIAN No. 18764009281<br>
+                Planta Principal: Km 2 Vía El Rosal – Subachoque, El Rosal, Cundinamarca<br>
+                Tel: (601) 824-5590 · facturacion@dibufala.com.co
+              </p>
+            </div>
+            <div class="factura-folio">
+              <span>Factura Electrónica de Venta</span>
+              <strong x-text="'FAC-' + String(facturaActual.id).padStart(4, '0')"></strong>
+              <p style="font-size:11px; color:#5C615D; margin-top:4px;" x-text="'Fecha: ' + facturaActual.fecha"></p>
+              <span class="badge badge-success" style="margin-top:6px;" x-text="facturaActual.estado.toUpperCase()"></span>
+            </div>
+          </div>
+
+          <div class="factura-info-grid">
+            <div>
+              <strong style="color:#122B20; display:block; margin-bottom:4px;">DATOS DEL CLIENTE</strong>
+              <div><strong>Nombre / Razón Social:</strong> <span x-text="facturaActual.cliente_nombre"></span></div>
+              <div><strong>Documento / NIT:</strong> <span x-text="facturaActual.cliente_documento || 'No registrado'"></span></div>
+              <div><strong>Dirección:</strong> <span x-text="facturaActual.cliente_direccion || 'Entrega en planta El Rosal'"></span></div>
+              <div><strong>Teléfono / Email:</strong> <span x-text="(facturaActual.cliente_telefono || 'N/A') + ' · ' + (facturaActual.cliente_email || '')"></span></div>
+            </div>
+            <div>
+              <strong style="color:#122B20; display:block; margin-bottom:4px;">DETALLES DE LA OPERACIÓN</strong>
+              <div><strong>Sede Expedición:</strong> El Rosal, Cundinamarca</div>
+              <div><strong>Método de Pago:</strong> <span x-text="extraerMetodoPago(facturaActual.observacion)"></span></div>
+              <div><strong>Notas / Referencia:</strong> <span x-text="facturaActual.observacion || 'Venta directa'"></span></div>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Descripción del Producto Lácteo</th>
+                <th style="text-align:center;">Cant.</th>
+                <th style="text-align:right;">Valor Unit.</th>
+                <th style="text-align:right;">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-for="(item, idx) in facturaActual.items" :key="idx">
+                <tr>
+                  <td x-text="idx + 1"></td>
+                  <td><strong x-text="item.producto || item.nombre"></strong></td>
+                  <td style="text-align:center;" x-text="item.cantidad"></td>
+                  <td style="text-align:right;" x-text="'$' + Number(item.precio_unit || item.precio).toLocaleString('es-CO')"></td>
+                  <td style="text-align:right;"><strong x-text="'$' + Number(item.subtotal || (item.cantidad * (item.precio_unit || item.precio))).toLocaleString('es-CO')"></strong></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+
+          <div class="factura-totales">
+            <div>
+              <span>Subtotal Base (Sin IVA):</span>
+              <span x-text="'$' + Math.round(Number(facturaActual.total) / 1.19).toLocaleString('es-CO')"></span>
+            </div>
+            <div>
+              <span>IVA Incluido (19%):</span>
+              <span x-text="'$' + (Number(facturaActual.total) - Math.round(Number(facturaActual.total) / 1.19)).toLocaleString('es-CO')"></span>
+            </div>
+            <div class="gran-total">
+              <span>TOTAL PAGADO:</span>
+              <span x-text="'$' + Number(facturaActual.total).toLocaleString('es-CO') + ' COP'"></span>
+            </div>
+          </div>
+
+          <div class="factura-footer-note">
+            <div>
+              <strong>¡Gracias por preferir Dibufala S.A.S. · El Rosal, Cundinamarca!</strong><br>
+              Cadena de frío: Mantener refrigerado entre 2°C y 4°C para conservar su frescura.
+            </div>
+            <div style="text-align:right; font-family:monospace; background:#F7F5F0; padding:6px 10px; border-radius:6px; border:1px solid #E5DFD3;">
+              CUFE-DBUF-<span x-text="String(facturaActual.id).padStart(4,'0')"></span>-2026
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer no-print">
+        <button class="btn btn-secondary" @click="mostrarFactura=false">Cerrar</button>
+        <button class="btn btn-gold" @click="imprimirFactura()"><i class="bi bi-printer-fill"></i> Imprimir / Guardar PDF</button>
       </div>
     </div>
   </div>
@@ -238,7 +337,10 @@
           </tbody>
         </table>
       </div>
-      <div class="modal-footer"><button class="btn btn-secondary" @click="mostrarDetalle=false">Cerrar</button></div>
+      <div class="modal-footer">
+        <button class="btn btn-gold" @click="mostrarDetalle=false; abrirFactura(ventaSeleccionada)"><i class="bi bi-printer-fill"></i> Ver Factura</button>
+        <button class="btn btn-secondary" @click="mostrarDetalle=false">Cerrar</button>
+      </div>
     </div>
   </div>
 </div>

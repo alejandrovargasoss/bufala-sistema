@@ -1,6 +1,6 @@
 /**
- * app.js - Funciones Alpine.js Bufalabella S.A.S. (Dibufala)
- * CRUD + Ventas Multi-producto + IA Gemini + Reportes
+ * app.js - Funciones Alpine.js Dibufala S.A.S. (El Rosal, Cundinamarca)
+ * CRUD + Ventas Multi-producto + Generación Automática de Factura + IA Gemini
  */
 
 const API = (window.APP_BASE_URL || '') + '/index.php';
@@ -216,7 +216,7 @@ function clientesApp() {
   };
 }
 
-// VENTAS (Multi-producto con cálculo automático y pagos PSE / Tarjetas)
+// VENTAS + FACTURACIÓN AUTOMÁTICA DIBUFALA S.A.S.
 function ventasApp() {
   return {
     ventas:            [],
@@ -226,6 +226,8 @@ function ventasApp() {
     mostrarModal:      false,
     mostrarPasarela:   false,
     mostrarDetalle:    false,
+    mostrarFactura:    false,
+    facturaActual:     null,
     refTransaccion:    '',
     ventaSeleccionada: null,
     detalleItems:      [],
@@ -349,6 +351,12 @@ function ventasApp() {
       }
       const obsFinal = `${tag} ${this.form.observacion || ''}`.trim();
       const payload = { ...this.form, observacion: obsFinal };
+
+      const clienteObj = this.clientes.find(c => Number(c.id) === Number(this.form.id_cliente));
+      const itemsCopia = JSON.parse(JSON.stringify(this.form.items));
+      const totalCopia = this.totalVenta;
+      const estadoCopia = this.form.estado;
+
       try {
         const res  = await fetch(`${API}?modulo=ventas&accion=guardar`, {
           method: 'POST',
@@ -357,8 +365,58 @@ function ventasApp() {
         });
         const json = await res.json();
         crearAlerta(this, json.mensaje, json.ok ? 'success' : 'danger');
-        if (json.ok) { this.cerrarModal(); await this.cargar(); }
+        if (json.ok) {
+          this.cerrarModal();
+          await this.cargar();
+          const nuevaVenta = this.ventas.length > 0 ? this.ventas[0] : null;
+          const idFactura = json.id || (nuevaVenta ? nuevaVenta.id : Date.now().toString().slice(-4));
+
+          this.facturaActual = {
+            id: idFactura,
+            fecha: nuevaVenta ? nuevaVenta.fecha : new Date().toLocaleString('es-CO'),
+            estado: estadoCopia,
+            total: totalCopia,
+            observacion: obsFinal,
+            cliente_nombre: clienteObj ? `${clienteObj.nombre} ${clienteObj.apellido}` : 'Cliente General',
+            cliente_documento: clienteObj?.documento || '',
+            cliente_direccion: clienteObj?.direccion || '',
+            cliente_telefono: clienteObj?.telefono || '',
+            cliente_email: clienteObj?.email || '',
+            items: itemsCopia
+          };
+          this.mostrarFactura = true;
+        }
       } catch (e) { crearAlerta(this, 'Error al registrar venta.', 'danger'); }
+    },
+
+    async abrirFactura(venta) {
+      if (!venta) return;
+      const clienteObj = this.clientes.find(c => Number(c.id) === Number(venta.id_cliente));
+      let itemsFactura = [];
+      try {
+        const res = await fetch(`${API}?modulo=ventas&accion=detalle&id=${venta.id}`);
+        const json = await res.json();
+        itemsFactura = json.ok ? json.datos : [];
+      } catch (e) {}
+
+      this.facturaActual = {
+        id: venta.id,
+        fecha: venta.fecha,
+        estado: venta.estado,
+        total: venta.total,
+        observacion: venta.observacion,
+        cliente_nombre: venta.cliente || (clienteObj ? `${clienteObj.nombre} ${clienteObj.apellido}` : 'Cliente #' + venta.id_cliente),
+        cliente_documento: clienteObj?.documento || '',
+        cliente_direccion: clienteObj?.direccion || '',
+        cliente_telefono: clienteObj?.telefono || '',
+        cliente_email: clienteObj?.email || '',
+        items: itemsFactura
+      };
+      this.mostrarFactura = true;
+    },
+
+    imprimirFactura() {
+      window.print();
     },
 
     async verDetalle(venta) {
