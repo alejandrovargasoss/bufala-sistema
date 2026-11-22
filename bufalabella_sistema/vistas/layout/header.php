@@ -20,56 +20,69 @@
       <div class="brand-icon">🐃</div>
       <div class="brand-text">
         <h2>DIBUFALA S.A.S.</h2>
-        <span>Planta El Rosal · Cundinamarca</span>
+        <span>El Rosal · Cundinamarca</span>
       </div>
     </div>
 
     <nav class="nav-pills">
       <a href="<?= BASE_URL ?>/index.php" class="<?= $moduloActivo==='dashboard'?'active':'' ?>">
-        <i class="bi bi-grid-fill"></i> Dashboard
+        <i class="bi bi-speedometer2"></i> Inicio
+      </a>
+      <a href="<?= BASE_URL ?>/index.php?modulo=ventas&accion=listar" class="<?= $moduloActivo==='ventas'?'active':'' ?>">
+        <i class="bi bi-receipt-cutoff"></i> Ventas y Facturas
       </a>
       <a href="<?= BASE_URL ?>/index.php?modulo=productos&accion=listar" class="<?= $moduloActivo==='productos'?'active':'' ?>">
-        <i class="bi bi-box-seam-fill"></i> Cava Láctea
+        <i class="bi bi-box-seam-fill"></i> Inventario Lácteo
       </a>
       <a href="<?= BASE_URL ?>/index.php?modulo=clientes&accion=listar" class="<?= $moduloActivo==='clientes'?'active':'' ?>">
         <i class="bi bi-people-fill"></i> Clientes
       </a>
-      <a href="<?= BASE_URL ?>/index.php?modulo=ventas&accion=listar" class="<?= $moduloActivo==='ventas'?'active':'' ?>">
-        <i class="bi bi-truck"></i> Ventas & Despachos
-      </a>
       <a href="<?= BASE_URL ?>/index.php?modulo=reportes&accion=dashboard" class="<?= $moduloActivo==='reportes'?'active':'' ?>">
-        <i class="bi bi-graph-up-arrow"></i> Analítica
+        <i class="bi bi-bar-chart-fill"></i> Gráficas y Reportes
       </a>
     </nav>
 
     <div class="nav-actions">
-      <span class="cold-chain-pill" title="Sensor IoT Cava Principal El Rosal">
-        <i class="bi bi-snow2"></i> Cava: 3.2°C
+      <span class="cold-chain-pill" title="Temperatura Cava Principal El Rosal">
+        <i class="bi bi-thermometer-snow"></i> Cava: 3.1°C
       </span>
       <span class="user-chip">
-        <i class="bi bi-person-fill"></i> <?= htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Admin') ?>
+        <i class="bi bi-person-circle"></i> <?= htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Admin') ?>
       </span>
-      <a href="<?= BASE_URL ?>/index.php?modulo=auth&accion=logout" class="btn btn-danger btn-sm" title="Cerrar sesión">
-        <i class="bi bi-power"></i>
+      <a href="<?= BASE_URL ?>/index.php?modulo=auth&accion=logout" class="btn btn-rojo btn-sm" title="Salir del sistema">
+        <i class="bi bi-box-arrow-right"></i> Salir
       </a>
     </div>
   </header>
 
-  <div class="page-banner">
+  <!-- BARRA DE ACCESOS RÁPIDOS INTUITIVOS -->
+  <div class="quick-bar">
     <div>
       <h1>
         <?php
         $titulos = [
-          'dashboard' => 'Centro de Operaciones · Dibufala S.A.S.',
-          'productos' => 'Inventario de Cava y Derivados de Búfala',
-          'clientes'  => 'Red de Clientes y Distribuidores',
-          'ventas'    => 'Facturación, Rutas y Cadena de Frío',
-          'reportes'  => 'Inteligencia Comercial y Rendimiento',
+          'dashboard' => 'Panel Principal · Dibufala S.A.S.',
+          'productos' => 'Inventario de Productos de Búfala',
+          'clientes'  => 'Directorio de Clientes y Aliados',
+          'ventas'    => 'Facturación y Rutas Refrigeradas',
+          'reportes'  => 'Gráficas de Rendimiento Comercial',
         ];
         echo $titulos[$moduloActivo] ?? 'Dibufala S.A.S.';
         ?>
       </h1>
-      <p>Km 2 Vía El Rosal – Subachoque, Cundinamarca · NIT 900.845.219-7 · Motor IA Activo</p>
+      <p>Planta Principal El Rosal, Cundinamarca · NIT 900.845.219-7</p>
+    </div>
+
+    <div class="quick-buttons">
+      <a href="<?= BASE_URL ?>/index.php?modulo=ventas&accion=listar" class="btn btn-primary">
+        <i class="bi bi-cart-plus-fill"></i> Registrar Venta
+      </a>
+      <a href="<?= BASE_URL ?>/index.php?modulo=productos&accion=listar" class="btn btn-dark">
+        <i class="bi bi-plus-circle-fill"></i> Gestionar Stock
+      </a>
+      <a href="<?= BASE_URL ?>/index.php?modulo=clientes&accion=listar" class="btn btn-secondary">
+        <i class="bi bi-person-plus-fill"></i> Clientes
+      </a>
     </div>
   </div>
 
