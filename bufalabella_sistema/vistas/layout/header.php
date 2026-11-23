@@ -13,43 +13,86 @@
     window.APP_BASE_URL = <?= json_encode(BASE_URL) ?>;
   </script>
 </head>
-<body>
-<div class="app-shell">
-  <header class="top-navbar">
-    <div class="brand-box">
-      <div class="brand-icon">🐃</div>
-      <div class="brand-text">
-        <h2>DIBUFALA S.A.S.</h2>
-        <span>El Rosal · Cundinamarca</span>
+<body x-data="{ menuAbierto: localStorage.getItem('dibufala_menu') === 'true' }">
+
+<!-- MENÚ LATERAL COLAPSABLE ESTILO MODERNO -->
+<aside class="side-rail" :class="{ 'expanded': menuAbierto }">
+  <button type="button" class="rail-toggle-btn"
+          @click="menuAbierto = !menuAbierto; localStorage.setItem('dibufala_menu', menuAbierto)"
+          :title="menuAbierto ? 'Contraer menú' : 'Desplegar menú'">
+    <i class="bi bi-chevron-right"></i>
+  </button>
+
+  <div>
+    <!-- Marca -->
+    <div class="rail-brand">
+      <div class="rail-logo-icon">🐃</div>
+      <div class="rail-brand-text" x-show="menuAbierto" x-transition.opacity>
+        <h2>DIBUFALA</h2>
+        <span>El Rosal · Cund.</span>
       </div>
     </div>
 
-    <nav class="nav-pills">
-      <a href="<?= BASE_URL ?>/index.php" class="<?= $moduloActivo==='dashboard'?'active':'' ?>">
-        <i class="bi bi-speedometer2"></i> Inicio
+    <!-- Navegación -->
+    <nav class="rail-nav">
+      <a href="<?= BASE_URL ?>/index.php" class="rail-link <?= $moduloActivo==='dashboard'?'active':'' ?>" title="Inicio">
+        <i class="bi bi-house-door-fill"></i>
+        <span x-show="menuAbierto" x-transition.opacity>Inicio</span>
       </a>
-      <a href="<?= BASE_URL ?>/index.php?modulo=ventas&accion=listar" class="<?= $moduloActivo==='ventas'?'active':'' ?>">
-        <i class="bi bi-receipt-cutoff"></i> Ventas
+
+      <a href="<?= BASE_URL ?>/index.php?modulo=ventas&accion=listar" class="rail-link <?= $moduloActivo==='ventas'?'active':'' ?>" title="Ventas y Facturas">
+        <i class="bi bi-currency-dollar"></i>
+        <span x-show="menuAbierto" x-transition.opacity>Ventas</span>
       </a>
-      <a href="<?= BASE_URL ?>/index.php?modulo=productos&accion=listar" class="<?= $moduloActivo==='productos'?'active':'' ?>">
-        <i class="bi bi-box-seam-fill"></i> Productos
+
+      <a href="<?= BASE_URL ?>/index.php?modulo=productos&accion=listar" class="rail-link <?= $moduloActivo==='productos'?'active':'' ?>" title="Productos">
+        <i class="bi bi-box-seam-fill"></i>
+        <span x-show="menuAbierto" x-transition.opacity>Productos</span>
       </a>
-      <a href="<?= BASE_URL ?>/index.php?modulo=clientes&accion=listar" class="<?= $moduloActivo==='clientes'?'active':'' ?>">
-        <i class="bi bi-people-fill"></i> Clientes
+
+      <a href="<?= BASE_URL ?>/index.php?modulo=clientes&accion=listar" class="rail-link <?= $moduloActivo==='clientes'?'active':'' ?>" title="Clientes">
+        <i class="bi bi-people-fill"></i>
+        <span x-show="menuAbierto" x-transition.opacity>Clientes</span>
       </a>
-      <a href="<?= BASE_URL ?>/index.php?modulo=reportes&accion=dashboard" class="<?= $moduloActivo==='reportes'?'active':'' ?>">
-        <i class="bi bi-bar-chart-fill"></i> Reportes
+
+      <a href="<?= BASE_URL ?>/index.php?modulo=reportes&accion=dashboard" class="rail-link <?= $moduloActivo==='reportes'?'active':'' ?>" title="Reportes">
+        <i class="bi bi-bar-chart-fill"></i>
+        <span x-show="menuAbierto" x-transition.opacity>Reportes</span>
       </a>
     </nav>
+  </div>
 
-    <div class="nav-actions">
-      <span class="user-chip">
-        <i class="bi bi-person-circle"></i> <?= htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Admin') ?>
-      </span>
-      <a href="<?= BASE_URL ?>/index.php?modulo=auth&accion=logout" class="btn btn-danger btn-sm" title="Cerrar sesión">
-        <i class="bi bi-box-arrow-right"></i> Salir
-      </a>
+  <!-- Botón Cerrar Sesión abajo -->
+  <div class="rail-footer">
+    <a href="<?= BASE_URL ?>/index.php?modulo=auth&accion=logout" class="rail-logout" title="Cerrar sesión">
+      <i class="bi bi-power"></i>
+      <span x-show="menuAbierto" x-transition.opacity>Cerrar sesión</span>
+    </a>
+  </div>
+</aside>
+
+<!-- CONTENIDO PRINCIPAL -->
+<div class="app-shell" :class="{ 'rail-open': menuAbierto }">
+  <header class="mini-topbar">
+    <div>
+      <h1>
+        <?php
+        $titulos = [
+          'dashboard' => 'Inicio · Dibufala S.A.S.',
+          'ventas'    => 'Ventas y Facturación',
+          'productos' => 'Inventario de Productos',
+          'clientes'  => 'Directorio de Clientes',
+          'reportes'  => 'Reportes y Estadísticas',
+        ];
+        echo $titulos[$moduloActivo] ?? 'Dibufala S.A.S.';
+        ?>
+      </h1>
+      <p>Planta El Rosal, Cundinamarca · NIT 900.845.219-7</p>
     </div>
+
+    <span class="user-chip">
+      <i class="bi bi-person-circle"></i> <?= htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Admin') ?>
+    </span>
   </header>
 
   <main class="content-area"></main>
