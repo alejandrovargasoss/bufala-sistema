@@ -1,16 +1,13 @@
 <?php
 /**
- * index.php - Front Controller Bufalabella S.A.S. (Único punto de entrada MVC)
- * Bufalabella S.A.S. - Dibufala
+ * index.php - Front Controller Dibufala S.A.S. (Único punto de entrada MVC)
  */
 
-// Redirigir a HTTPS en producción si llega por HTTP detrás de proxy
 if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'http') {
     header('Location: https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'], true, 301);
     exit();
 }
 
-// Cabeceras de seguridad
 header('X-Frame-Options: DENY');
 header('X-Content-Type-Options: nosniff');
 header('X-XSS-Protection: 1; mode=block');
@@ -40,9 +37,8 @@ if ($modulo === 'auth') {
     exit;
 }
 
-// Verificar sesión activa para proteger el sistema en línea
+// Verificar sesión activa
 if (empty($_SESSION['usuario_id'])) {
-    // Si es una petición API (fetch/JSON), devolver 401
     $esApi = !in_array($accion, ['listar', 'dashboard']) && $modulo !== 'dashboard';
     if ($esApi) {
         header('Content-Type: application/json; charset=utf-8');
@@ -50,12 +46,29 @@ if (empty($_SESSION['usuario_id'])) {
         echo json_encode(['ok' => false, 'mensaje' => 'Sesión expirada. Inicia sesión nuevamente.']);
         exit;
     }
-    // Si es navegación HTML, redirigir al login
     header('Location: ' . BASE_URL . '/index.php?modulo=auth&accion=loginForm');
     exit;
 }
 
-// Por defecto las respuestas de acciones son JSON salvo las vistas HTML
+$rolUsuario = $_SESSION['usuario_rol'] ?? 'cliente';
+
+// Restricciones para cuentas 'cliente': solo investigar/consultar productos y realizar compras
+$accionesAdminBloqueadas = ['guardar', 'actualizar', 'eliminar', 'editar', 'crear', 'cancelar', 'anular'];
+if ($rolUsuario !== 'admin') {
+    if ($modulo === 'clientes' || $modulo === 'reportes') {
+        header('Content-Type: application/json; charset=utf-8');
+        http_response_code(403);
+        echo json_encode(['ok' => false, 'mensaje' => 'Acceso restringido: solo disponible para el administrador']);
+        exit;
+    }
+    if ($modulo === 'productos' && in_array($accion, $accionesAdminBloqueadas, true)) {
+        header('Content-Type: application/json; charset=utf-8');
+        http_response_code(403);
+        echo json_encode(['ok' => false, 'mensaje' => 'Como cliente solo puedes consultar e investigar productos']);
+        exit;
+    }
+}
+
 header('Content-Type: application/json; charset=utf-8');
 
 switch ($modulo) {

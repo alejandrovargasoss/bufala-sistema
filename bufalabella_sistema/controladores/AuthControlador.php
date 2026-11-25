@@ -3,7 +3,7 @@ class AuthControlador {
     private $bd;
 
     public function __construct($bd) {
-        $this->bd = $bd;
+        $this->bd =$bd;
     }
 
     public function loginForm() {
@@ -19,7 +19,7 @@ class AuthControlador {
         header('Content-Type: application/json; charset=utf-8');
         $d = json_decode(file_get_contents('php://input'), true) ?? $_POST;
         $email = trim($d['email'] ?? '');
-        $password = $d['password'] ?? '';
+        $password =$d['password'] ?? '';
 
         if ($email === '' || $password === '') {
             http_response_code(400);
@@ -27,17 +27,20 @@ class AuthControlador {
             return;
         }
 
-        $stmt = $this->bd->prepare("SELECT id, nombre, email, password, rol FROM usuarios WHERE email = ? AND estado = 'activo' LIMIT 1");
-        $stmt->bind_param('s', $email);
-        $stmt->execute();
-        $user = $stmt->get_result()->fetch_assoc();
+        $stmt =$this->bd->prepare("SELECT id, nombre, email, password, rol FROM usuarios WHERE email = ? AND estado = 'activo' LIMIT 1");
+        $stmt->bind_param('s', $email);$stmt->execute();
+        $user =$stmt->get_result()->fetch_assoc();
 
-        if ($user && password_verify($password, $user['password'])) {
-            $_SESSION['usuario_id']     = $user['id'];
-            $_SESSION['usuario_nombre'] = $user['nombre'];
-            $_SESSION['usuario_rol']    = $user['rol'];
-            Logger::info('Inicio de sesión exitoso', ['email' => $email]);
-            echo json_encode(['ok' => true, 'mensaje' => 'Bienvenido ' . $user['nombre']]);
+        if ($user && password_verify($password,$user['password'])) {
+            $_SESSION['usuario_id']     =$user['id'];
+            $_SESSION['usuario_nombre'] =$user['nombre'];
+            $_SESSION['usuario_rol']    =$user['rol'] ?: 'cliente';
+            Logger::info('Inicio de sesión exitoso', ['email' => $email, 'rol' =>$_SESSION['usuario_rol']]);
+            echo json_encode([
+                'ok'      => true,
+                'rol'     => $_SESSION['usuario_rol'],
+                'mensaje' => 'Bienvenido ' . $user['nombre']
+            ]);
         } else {
             Logger::warn('Intento fallido de inicio de sesión', ['email' => $email]);
             http_response_code(401);
@@ -50,7 +53,7 @@ class AuthControlador {
         $d = json_decode(file_get_contents('php://input'), true) ?? [];
         $nombre   = trim($d['nombre'] ?? '');
         $email    = trim($d['email'] ?? '');
-        $password = $d['password'] ?? '';
+        $password =$d['password'] ?? '';
 
         if ($nombre === '' || $email === '' || strlen($password) < 6) {
             http_response_code(400);
@@ -58,9 +61,8 @@ class AuthControlador {
             return;
         }
 
-        $check = $this->bd->prepare("SELECT id FROM usuarios WHERE email = ?");
-        $check->bind_param('s', $email);
-        $check->execute();
+        $check =$this->bd->prepare("SELECT id FROM usuarios WHERE email = ?");
+        $check->bind_param('s', $email);$check->execute();
         if ($check->get_result()->num_rows > 0) {
             http_response_code(409);
             echo json_encode(['ok' => false, 'mensaje' => 'Este correo ya está registrado']);
@@ -68,17 +70,22 @@ class AuthControlador {
         }
 
         $hash = password_hash($password, PASSWORD_DEFAULT);
-        $rol  = 'vendedor';
-        $stmt = $this->bd->prepare("INSERT INTO usuarios (nombre, email, password, rol, estado) VALUES (?, ?, ?, ?, 'activo')");
-        $stmt->bind_param('ssss', $nombre, $email, $hash, $rol);
+        // Toda cuenta nueva nace como 'cliente' (solo consultar/investigar y comprar)
+        $rol  = 'cliente';
+        $stmt =$this->bd->prepare("INSERT INTO usuarios (nombre, email, password, rol, estado) VALUES (?, ?, ?, ?, 'activo')");
+        $stmt->bind_param('ssss', $nombre,$email, $hash,$rol);
 
         if ($stmt->execute()) {
-            $_SESSION['usuario_id']     = $this->bd->insert_id;
-            $_SESSION['usuario_nombre'] = $nombre;
-            $_SESSION['usuario_rol']    = $rol;
-            Logger::info('Nuevo usuario registrado', ['email' => $email]);
+            $_SESSION['usuario_id']     =$this->bd->insert_id;
+            $_SESSION['usuario_nombre'] =$nombre;
+            $_SESSION['usuario_rol']    =$rol;
+            Logger::info('Nuevo cliente registrado', ['email' => $email, 'rol' =>$rol]);
             http_response_code(201);
-            echo json_encode(['ok' => true, 'mensaje' => 'Cuenta creada exitosamente']);
+            echo json_encode([
+                'ok'      => true,
+                'rol'     => $rol,
+                'mensaje' => 'Cuenta creada como cliente. Puedes explorar productos y realizar compras.'
+            ]);
         } else {
             http_response_code(500);
             echo json_encode(['ok' => false, 'mensaje' => 'No se pudo crear la cuenta']);

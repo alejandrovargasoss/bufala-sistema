@@ -1,48 +1,68 @@
+<?php $esAdmin = (($_SESSION['usuario_rol'] ?? 'cliente') === 'admin'); ?>
 <div class="card" x-data="productosApp()">
   <template x-if="mensaje">
     <div :class="`alert alert-${tipoMsg}`" x-text="mensaje"></div>
   </template>
   <div class="card-header">
-    <h2>🧀 Inventario de Productos Lácteos</h2>
-    <div style="display:flex; gap:10px; align-items:center;">
+    <h2>🧀 <?= $esAdmin ? 'Inventario de Productos Lácteos' : 'Catálogo de Productos · Explorar y Comprar' ?></h2>
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
       <input type="text" x-model="busqueda" placeholder="Buscar producto o marca..." style="padding:7px 12px; border:1px solid #E2E8F0; border-radius:8px; font-size:13px;">
-      <button class="btn btn-primary" @click="abrirFormulario()">
-        <i class="bi bi-plus-lg"></i> Nuevo Producto
-      </button>
+      <?php if ($esAdmin): ?>
+        <button class="btn btn-primary" @click="abrirFormulario()">
+          <i class="bi bi-plus-lg"></i> Nuevo Producto
+        </button>
+      <?php else: ?>
+        <a href="<?= BASE_URL ?>/index.php?modulo=ventas&accion=listar" class="btn btn-primary">
+          <i class="bi bi-cart-plus"></i> Ir a Comprar
+        </a>
+      <?php endif; ?>
     </div>
   </div>
   <div class="card-body">
-    <div x-show="cargando" class="spinner-wrap"><div class="spinner"></div> Cargando inventario...</div>
+    <div x-show="cargando" class="spinner-wrap"><div class="spinner"></div> Cargando productos...</div>
     <div x-show="!cargando" class="table-responsive">
       <table>
-        <thead><tr><th>#</th><th>Nombre</th><th>Marca</th><th>Precio</th><th>Stock</th><th>Categoría</th><th>Acciones</th></tr></thead>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nombre</th>
+            <th>Marca</th>
+            <th>Precio</th>
+            <th>Stock</th>
+            <th>Categoría</th>
+            <?php if ($esAdmin): ?><th>Acciones</th><?php endif; ?>
+          </tr>
+        </thead>
         <tbody>
           <template x-for="p in productosFiltrados" :key="p.id">
             <tr>
               <td x-text="p.id"></td>
               <td>
                 <strong x-text="p.nombre"></strong>
-                <div style="font-size:12px; color:#94A3B8;" x-text="p.descripcion || ''"></div>
+                <div style="font-size:12px; color:#71717A;" x-text="p.descripcion || ''"></div>
               </td>
               <td x-text="p.marca || '—'"></td>
-              <td x-text="'$' + Number(p.precio).toLocaleString('es-CO')"></td>
+              <td><strong x-text="'$' + Number(p.precio).toLocaleString('es-CO')"></strong></td>
               <td><span :class="Number(p.stock) < 5 ? 'stock-bajo' : ''" x-text="p.stock + ' uds.'"></span></td>
               <td><span class="badge badge-info" x-text="p.categoria || 'General'"></span></td>
+              <?php if ($esAdmin): ?>
               <td style="display:flex;gap:6px;">
                 <button class="btn btn-secondary btn-sm" @click="editar(p)" title="Editar"><i class="bi bi-pencil"></i></button>
                 <button class="btn btn-danger btn-sm" @click="eliminar(p.id)" title="Eliminar"><i class="bi bi-trash"></i></button>
               </td>
+              <?php endif; ?>
             </tr>
           </template>
           <template x-if="!cargando && productosFiltrados.length===0">
-            <tr><td colspan="7"><div class="empty-state"><p>No hay productos registrados.</p></div></td></tr>
+            <tr><td colspan="<?= $esAdmin ? 7 : 6 ?>"><div class="empty-state"><p>No hay productos registrados.</p></div></td></tr>
           </template>
         </tbody>
       </table>
     </div>
   </div>
 
-  <!-- Modal formulario -->
+  <?php if ($esAdmin): ?>
+  <!-- Modal formulario (solo administrador) -->
   <div class="modal-overlay" x-show="mostrarModal" x-cloak>
     <div class="modal">
       <div class="modal-header">
@@ -80,4 +100,5 @@
       </div>
     </div>
   </div>
+  <?php endif; ?>
 </div>
