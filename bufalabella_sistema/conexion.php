@@ -1,3 +1,46 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Cargar variables de entorno desde .env si existe
+$envFile = __DIR__ . '/.env';
+if (file_exists($envFile)) {
+    foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+        $line = trim($line);
+        if ($line === '' || strpos($line, '#') === 0 || strpos($line, '=') === false) continue;
+        [$k, $v] = explode('=', $line, 2);
+        $_ENV[trim($k)] = trim($v, " \t\n\r\0\x0B\"'");
+    }
+}
+
+$host = $_ENV['DB_HOST'] ?? getenv('DB_HOST') ?: 'localhost';
+$user = $_ENV['DB_USER'] ?? getenv('DB_USER') ?: 'root';
+$pass = $_ENV['DB_PASS'] ?? getenv('DB_PASS') ?: '';
+$db   = $_ENV['DB_NAME'] ?? getenv('DB_NAME') ?: 'bufalabella_db';
+$port = (int)($_ENV['DB_PORT'] ?? getenv('DB_PORT') ?: 3306);
+
+mysqli_report(MYSQLI_REPORT_OFF);
+$conexion = @new mysqli($host, $user, $pass, $db, $port);
+
+if ($conexion->connect_error) {
+    die('Error de conexión a la base de datos: ' . $conexion->connect_error);
+}
+$conexion->set_charset('utf8mb4');
+
+// Definir BASE_URL automáticamente (local XAMPP o servidor en la nube)
+if (!defined('BASE_URL')) {
+    $envBase = $_ENV['BASE_URL'] ?? getenv('BASE_URL');
+    if ($envBase !== false && $envBase !== null) {
+        define('BASE_URL', rtrim($envBase, '/'));
+    } else {
+        $docRoot = str_replace('\\', '/', realpath($_SERVER['DOCUMENT_ROOT'] ?? ''));
+        $appRoot = str_replace('\\', '/', realpath(__DIR__));
+        $relPath = ($docRoot && strpos($appRoot, $docRoot) === 0) ? substr($appRoot, strlen($docRoot)) : '';
+        define('BASE_URL', rtrim($relPath, '/'));
+    }
+}
+
 // Garantizar catálogo base de Dibufala S.A.S. y clientes si la tabla está vacía
 try {
     $resCat = $conexion->query("SELECT COUNT(*) AS total FROM categorias");

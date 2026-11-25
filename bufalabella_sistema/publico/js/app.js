@@ -43,8 +43,11 @@ function productosApp() {
         const res  = await fetch(`${API}?modulo=productos&accion=obtenerTodos`);
         const json = await res.json();
         this.productos = json.ok ? json.datos : [];
-      } catch (e) { crearAlerta(this, 'Error de conexión.', 'danger'); }
-      finally { this.cargando = false; }
+      } catch (e) {
+        crearAlerta(this, 'Error de conexión.', 'danger');
+      } finally {
+        this.cargando = false;
+      }
     },
 
     async cargarCategorias() {
@@ -155,3 +158,93 @@ function clientesApp() {
     async cargar() {
       this.cargando = true;
       try {
+        const res = await fetch(`${API}?modulo=clientes&accion=obtenerTodos`);
+        const json = await res.json();
+        this.clientes = json.ok ? json.datos : [];
+      } catch (e) {
+        crearAlerta(this, 'Error de conexión.', 'danger');
+      } finally {
+        this.cargando = false;
+      }
+    },
+
+    abrirFormulario() {
+      this.modoEdicion = false;
+      this.form = { id:null, nombre:'', apellido:'', documento:'', telefono:'', email:'', direccion:'', estado:'activo' };
+      this.mostrarModal = true;
+    },
+
+    editar(cliente) {
+      this.modoEdicion = true;
+      this.form = { ...cliente };
+      this.mostrarModal = true;
+    },
+
+    cerrarModal() {
+      this.mostrarModal = false;
+    },
+
+    async guardar() {
+      if (!this.form.nombre || !this.form.apellido) {
+        crearAlerta(this, 'Nombre y apellido son obligatorios.', 'warning');
+        return;
+      }
+
+      const accion = this.modoEdicion ? 'actualizar' : 'guardar';
+      try {
+        const res = await fetch(`${API}?modulo=clientes&accion=${accion}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.form),
+        });
+        const json = await res.json();
+        crearAlerta(this, json.mensaje, json.ok ? 'success' : 'danger');
+        if (json.ok) {
+          this.cerrarModal();
+          await this.cargar();
+        }
+      } catch (e) {
+        crearAlerta(this, 'Error al guardar.', 'danger');
+      }
+    },
+
+    async eliminar(id) {
+      if (!confirm('¿Eliminar este cliente?')) return;
+      try {
+        const res = await fetch(`${API}?modulo=clientes&accion=eliminar&id=${id}`, { method: 'DELETE' });
+        const json = await res.json();
+        crearAlerta(this, json.mensaje, json.ok ? 'success' : 'danger');
+        if (json.ok) await this.cargar();
+      } catch (e) {
+        crearAlerta(this, 'Error al eliminar.', 'danger');
+      }
+    },
+
+    async analizarCliente(cliente) {
+      this.clienteSeleccionado = cliente;
+      this.mostrarIA = true;
+      this.cargandoIA = true;
+      this.sugerencias = [];
+
+      try {
+        const res = await fetch(`${API}?modulo=ia&accion=analizarCliente`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: cliente.id }),
+        });
+        const json = await res.json();
+        this.sugerencias = json.ok ? (json.datos || []) : [];
+      } catch (e) {
+        crearAlerta(this, 'No se pudo obtener el análisis de IA.', 'danger');
+      } finally {
+        this.cargandoIA = false;
+      }
+    },
+
+    cerrarIA() {
+      this.mostrarIA = false;
+      this.clienteSeleccionado = null;
+      this.sugerencias = [];
+    },
+  };
+}
