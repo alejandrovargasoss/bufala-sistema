@@ -22,7 +22,7 @@ CREATE TABLE `usuarios` (
   `nombre` varchar(100) NOT NULL,
   `email` varchar(120) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `rol` enum('admin','vendedor') DEFAULT 'vendedor',
+  `rol` enum('admin','vendedor','cliente') DEFAULT 'cliente',
   `estado` enum('activo','inactivo') DEFAULT 'activo',
   `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
