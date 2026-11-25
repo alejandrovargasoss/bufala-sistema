@@ -1,19 +1,22 @@
+<?php $esAdmin = (($_SESSION['usuario_rol'] ?? 'cliente') === 'admin'); ?>
 <div class="card" x-data="ventasApp()">
   <template x-if="mensaje">
     <div :class="`alert alert-${tipoMsg}`" x-text="mensaje"></div>
   </template>
   <div class="card-header">
-    <h2>🧾 Ventas y Facturación · Dibufala S.A.S.</h2>
-    <button class="btn btn-primary" @click="abrirFormulario()"><i class="bi bi-plus-lg"></i> Nueva Venta</button>
+    <h2>🧾 <?= $esAdmin ? 'Ventas y Facturación · Dibufala S.A.S.' : 'Mis Compras y Pedidos · Dibufala S.A.S.' ?></h2>
+    <button class="btn btn-primary" @click="abrirFormulario()">
+      <i class="bi bi-plus-lg"></i> <?= $esAdmin ? 'Nueva Venta' : 'Nuevo Pedido' ?>
+    </button>
   </div>
   <div class="card-body">
-    <div x-show="cargando" class="spinner-wrap"><div class="spinner"></div> Cargando ventas...</div>
+    <div x-show="cargando" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
     <div x-show="!cargando" class="table-responsive">
       <table>
         <thead>
           <tr>
-            <th>Factura</th>
-            <th>Cliente</th>
+            <th><?= $esAdmin ? 'Factura' : 'Pedido' ?></th>
+            <?php if ($esAdmin): ?><th>Cliente</th><?php endif; ?>
             <th>Fecha</th>
             <th>Pago y Ruta</th>
             <th>Total</th>
@@ -25,7 +28,7 @@
           <template x-for="v in ventas" :key="v.id">
             <tr>
               <td><strong style="color:#D91E2A;" x-text="'FAC-' + String(v.id).padStart(4, '0')"></strong></td>
-              <td x-text="v.cliente || 'Cliente #' + v.id_cliente"></td>
+              <?php if ($esAdmin): ?><td x-text="v.cliente || 'Cliente #' + v.id_cliente"></td><?php endif; ?>
               <td x-text="v.fecha"></td>
               <td>
                 <span class="badge badge-info" x-text="extraerMetodoPago(v.observacion)"></span>
@@ -37,29 +40,34 @@
                       x-text="v.estado"></span>
               </td>
               <td style="display:flex; gap:6px; flex-wrap:wrap;">
-                <button class="btn btn-dark btn-sm" @click="abrirFactura(v)"><i class="bi bi-printer-fill"></i> Factura</button>
-                <button x-show="v.estado==='pendiente'" class="btn btn-primary btn-sm" @click="completar(v.id)"><i class="bi bi-check-lg"></i> Pagar</button>
-                <button x-show="v.estado!=='cancelada'" class="btn btn-danger btn-sm" @click="cancelar(v.id)">Anular</button>
+                <button class="btn btn-dark btn-sm" @click="abrirFactura(v)">
+                  <i class="bi bi-receipt"></i> <?= $esAdmin ? 'Factura' : 'Comprobante' ?>
+                </button>
+                <?php if ($esAdmin): ?>
+                  <button x-show="v.estado==='pendiente'" class="btn btn-primary btn-sm" @click="completar(v.id)"><i class="bi bi-check-lg"></i> Pagar</button>
+                  <button x-show="v.estado!=='cancelada'" class="btn btn-danger btn-sm" @click="cancelar(v.id)">Anular</button>
+                <?php endif; ?>
               </td>
             </tr>
           </template>
           <template x-if="!cargando && ventas.length===0">
-            <tr><td colspan="7"><div class="empty-state"><p>No hay ventas registradas todavía.</p></div></td></tr>
+            <tr><td colspan="<?= $esAdmin ? 7 : 6 ?>"><div class="empty-state"><p><?= $esAdmin ? 'No hay ventas registradas todavía.' : 'Aún no has realizado compras. Haz clic en "Nuevo Pedido".' ?></p></div></td></tr>
           </template>
         </tbody>
       </table>
     </div>
   </div>
 
-  <!-- MODAL NUEVA VENTA -->
+  <!-- MODAL NUEVA VENTA / PEDIDO -->
   <div class="modal-overlay" x-show="mostrarModal" x-cloak>
     <div class="modal" style="max-width: 700px;">
       <div class="modal-header">
-        <h3>🛒 Registrar Nueva Venta</h3>
+        <h3>🛒 <?= $esAdmin ? 'Registrar Nueva Venta' : 'Realizar Pedido · Dibufala S.A.S.' ?></h3>
         <button class="btn-close" @click="cerrarModal()">✕</button>
       </div>
       <div class="modal-body">
-        <div class="form-grid-2">
+        <div class="<?= $esAdmin ? 'form-grid-2' : '' ?>">
+          <?php if ($esAdmin): ?>
           <div class="form-group">
             <label>Cliente *</label>
             <select x-model="form.id_cliente">
@@ -69,10 +77,11 @@
               </template>
             </select>
           </div>
+          <?php endif; ?>
           <div class="form-group">
-            <label>Ruta de Entrega *</label>
+            <label>Ruta / Punto de Entrega *</label>
             <select x-model="form.ruta_entrega">
-              <option value="Planta El Rosal">📍 Planta El Rosal</option>
+              <option value="Planta El Rosal">📍 Recoger en Planta El Rosal</option>
               <option value="Ruta Sabana Occidente">🚛 Ruta Sabana (Madrid / Funza / Mosquera)</option>
               <option value="Ruta Bogotá Norte">🚚 Ruta Bogotá Calle 80 / Norte</option>
               <option value="Ruta Subachoque-Facatativá">🚐 Ruta Subachoque / Facatativá</option>
@@ -80,16 +89,17 @@
           </div>
         </div>
 
-        <div class="form-grid-2">
+        <div class="<?= $esAdmin ? 'form-grid-2' : '' ?>">
           <div class="form-group">
             <label>Forma de Pago *</label>
             <select x-model="form.metodo_pago">
               <option value="PSE">🏦 PSE</option>
               <option value="Tarjeta Crédito / Débito">💳 Tarjeta Crédito / Débito</option>
               <option value="Nequi / Daviplata">📱 Nequi / Daviplata</option>
-              <option value="Efectivo">💵 Efectivo</option>
+              <option value="Efectivo">💵 Efectivo contra entrega</option>
             </select>
           </div>
+          <?php if ($esAdmin): ?>
           <div class="form-group">
             <label>Estado del Pago</label>
             <select x-model="form.estado">
@@ -97,6 +107,7 @@
               <option value="pendiente">Pendiente de pago</option>
             </select>
           </div>
+          <?php endif; ?>
         </div>
 
         <!-- Opciones PSE / Tarjeta -->
@@ -175,13 +186,13 @@
         </div>
 
         <div class="form-group" style="margin-bottom:0;">
-          <label>Observación (Opcional)</label>
-          <input type="text" x-model="form.observacion" placeholder="Nota de entrega o referencia...">
+          <label>Dirección o nota de entrega (Opcional)</label>
+          <input type="text" x-model="form.observacion" placeholder="Ej. Entregar en portería / Calle 10 # 5-20...">
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" @click="cerrarModal()">Cancelar</button>
-        <button class="btn btn-primary" @click="guardar()">Confirmar y Facturar</button>
+        <button class="btn btn-primary" @click="guardar()"><?= $esAdmin ? 'Confirmar y Facturar' : 'Confirmar Compra' ?></button>
       </div>
     </div>
   </div>
@@ -208,11 +219,11 @@
     </div>
   </div>
 
-  <!-- MODAL FACTURA OFICIAL DIBUFALA S.A.S. -->
+  <!-- MODAL COMPROBANTE / FACTURA OFICIAL DIBUFALA S.A.S. -->
   <div class="modal-overlay" x-show="mostrarFactura" x-cloak>
     <div class="modal" style="max-width: 740px;">
       <div class="modal-header no-print">
-        <h3>🧾 Factura Oficial · Dibufala S.A.S.</h3>
+        <h3>🧾 Comprobante Oficial · Dibufala S.A.S.</h3>
         <button class="btn-close" @click="mostrarFactura=false">✕</button>
       </div>
       <div class="modal-body">
@@ -228,7 +239,7 @@
               </p>
             </div>
             <div class="factura-folio">
-              <span>Factura de Venta</span>
+              <span>Comprobante</span>
               <strong x-text="'FAC-' + String(facturaActual.id).padStart(4, '0')"></strong>
               <p style="font-size:11px; color:#E4E4E7; margin-top:4px;" x-text="facturaActual.fecha"></p>
               <span class="badge badge-warning" style="margin-top:6px;" x-text="facturaActual.estado.toUpperCase()"></span>
@@ -239,16 +250,14 @@
             <div>
               <strong style="display:block; margin-bottom:4px;">CLIENTE</strong>
               <div><strong>Nombre:</strong> <span x-text="facturaActual.cliente_nombre"></span></div>
-              <div><strong>CC / NIT:</strong> <span x-text="facturaActual.cliente_documento || 'No registrado'"></span></div>
+              <div><strong>CC / NIT:</strong> <span x-text="facturaActual.cliente_documento || 'Cliente Web'"></span></div>
               <div><strong>Dirección:</strong> <span x-text="facturaActual.cliente_direccion || 'Planta El Rosal'"></span></div>
-              <div><strong>Teléfono:</strong> <span x-text="facturaActual.cliente_telefono || 'N/A'"></span></div>
             </div>
             <div>
               <strong style="display:block; margin-bottom:4px;">ENTREGA Y PAGO</strong>
               <div><strong>Ruta:</strong> <span x-text="extraerRuta(facturaActual.observacion)"></span></div>
               <div><strong>Cadena de Frío:</strong> ❄️ 3.1°C Certificada</div>
               <div><strong>Pago:</strong> <span x-text="extraerMetodoPago(facturaActual.observacion)"></span></div>
-              <div><strong>Detalle:</strong> <span x-text="facturaActual.observacion || 'Venta directa'"></span></div>
             </div>
           </div>
 

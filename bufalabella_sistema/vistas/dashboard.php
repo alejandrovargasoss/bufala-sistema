@@ -1,15 +1,87 @@
 <?php
-// Dashboard principal Dibufala S.A.S.
-$totalProductos = $conexion->query("SELECT COUNT(*) AS t FROM productos WHERE estado='activo'")->fetch_assoc()['t'] ?? 0;
-$totalClientes  = $conexion->query("SELECT COUNT(*) AS t FROM clientes  WHERE estado='activo'")->fetch_assoc()['t'] ?? 0;
-$totalVentas    = $conexion->query("SELECT COUNT(*) AS t FROM ventas WHERE YEAR(fecha)=YEAR(NOW()) AND MONTH(fecha)=MONTH(NOW()) AND estado!='cancelada'")->fetch_assoc()['t'] ?? 0;
-$ingresosMes    = $conexion->query("SELECT COALESCE(SUM(total),0) AS t FROM ventas WHERE YEAR(fecha)=YEAR(NOW()) AND MONTH(fecha)=MONTH(NOW()) AND estado='completada'")->fetch_assoc()['t'] ?? 0;
-$stockBajo      = $conexion->query("SELECT COUNT(*) AS t FROM productos WHERE stock < 5 AND estado='activo'")->fetch_assoc()['t'] ?? 0;
-$ultimasVentas  = $conexion->query(
-    "SELECT v.id, v.fecha, v.total, v.estado, CONCAT(c.nombre, ' ', c.apellido) AS cliente
-     FROM ventas v LEFT JOIN clientes c ON v.id_cliente = c.id
-     ORDER BY v.fecha DESC LIMIT 5"
-)->fetch_all(MYSQLI_ASSOC);
+$esAdmin = (($_SESSION['usuario_rol'] ?? 'cliente') === 'admin');
+
+if (!$esAdmin):
+    // VISTA EXCLUSIVA PARA CLIENTE: Bienvenida y quesos recomendados
+    $recomendados = $conexion->query(
+        "SELECT p.id, p.nombre, p.descripcion, p.precio, p.stock, p.marca, c.nombre AS categoria
+         FROM productos p
+         LEFT JOIN categorias c ON p.categoria_id = c.id
+         WHERE p.estado = 'activo' AND p.stock > 0
+         ORDER BY p.id ASC LIMIT 6"
+    )->fetch_all(MYSQLI_ASSOC);
+    $nombreCliente = htmlspecialchars($_SESSION['usuario_nombre'] ?? 'Cliente');
+?>
+  <!-- BIENVENIDA CLIENTE -->
+  <div class="card" style="background: linear-gradient(135deg, #111111 0%, #242424 100%); color: #FFFFFF; border: none; border-bottom: 4px solid #F5B800;">
+    <div class="card-body" style="padding: 28px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 18px;">
+      <div style="max-width: 620px;">
+        <span class="badge badge-warning" style="margin-bottom: 10px;">🐃 100% Leche de Búfala · El Rosal, Cundinamarca</span>
+        <h2 style="font-size: 24px; color: #FFFFFF; margin-bottom: 8px;">¡Bienvenido a Dibufala S.A.S., <?= $nombreCliente ?>!</h2>
+        <p style="font-size: 14px; color: #D4D4D8; line-height: 1.55;">
+          Descubre nuestra selección artesanal de quesos hilados, burratas, yogures griegos y mantequillas elaborados diariamente en nuestra planta de El Rosal con cadena de frío certificada.
+        </p>
+      </div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <a href="<?= BASE_URL ?>/index.php?modulo=productos&accion=listar" class="btn btn-secondary">
+          <i class="bi bi-search"></i> Investigar Catálogo
+        </a>
+        <a href="<?= BASE_URL ?>/index.php?modulo=ventas&accion=listar" class="btn btn-primary">
+          <i class="bi bi-bag-check-fill"></i> Hacer un Pedido
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUESOS Y LÁCTEOS RECOMENDADOS -->
+  <div class="card">
+    <div class="card-header">
+      <h2>🧀 Quesos y Lácteos Recomendados para Ti</h2>
+      <a href="<?= BASE_URL ?>/index.php?modulo=productos&accion=listar" class="btn btn-dark btn-sm">Ver catálogo completo</a>
+    </div>
+    <div class="card-body">
+      <?php if (empty($recomendados)): ?>
+        <div class="empty-state"><p>Pronto tendremos nuevos productos disponibles.</p></div>
+      <?php else: ?>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 16px;">
+          <?php foreach ($recomendados as $prod): ?>
+            <div style="border: 1px solid #E4E4E7; border-radius: 12px; padding: 18px; background: #FAFAFA; display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span class="badge badge-info"><?= htmlspecialchars($prod['categoria'] ?? 'Lácteos') ?></span>
+                  <span style="font-size: 11.5px; color: #16A34A; font-weight: 700;">● Disponible (<?= (int)$prod['stock'] ?>)</span>
+                </div>
+                <h3 style="font-size: 16px; color: #111111; margin-bottom: 6px;"><?= htmlspecialchars($prod['nombre']) ?></h3>
+                <p style="font-size: 13px; color: #52525B; line-height: 1.45; margin-bottom: 14px;">
+                  <?= htmlspecialchars($prod['descripcion'] ?: 'Producto artesanal 100% leche de búfala.') ?>
+                </p>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid #E4E4E7;">
+                <strong style="font-size: 17px; color: #D91E2A;">$<?= number_format($prod['precio'], 0, ',', '.') ?></strong>
+                <a href="<?= BASE_URL ?>/index.php?modulo=ventas&accion=listar" class="btn btn-primary btn-sm">
+                  <i class="bi bi-cart-plus"></i> Comprar
+                </a>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+    </div>
+  </div>
+
+<?php
+else:
+    // PANEL DE ADMINISTRADOR (INTACTO)
+    $totalProductos = $conexion->query("SELECT COUNT(*) AS t FROM productos WHERE estado='activo'")->fetch_assoc()['t'] ?? 0;
+    $totalClientes  = $conexion->query("SELECT COUNT(*) AS t FROM clientes  WHERE estado='activo'")->fetch_assoc()['t'] ?? 0;
+    $totalVentas    = $conexion->query("SELECT COUNT(*) AS t FROM ventas WHERE YEAR(fecha)=YEAR(NOW()) AND MONTH(fecha)=MONTH(NOW()) AND estado!='cancelada'")->fetch_assoc()['t'] ?? 0;
+    $ingresosMes    = $conexion->query("SELECT COALESCE(SUM(total),0) AS t FROM ventas WHERE YEAR(fecha)=YEAR(NOW()) AND MONTH(fecha)=MONTH(NOW()) AND estado='completada'")->fetch_assoc()['t'] ?? 0;
+    $stockBajo      = $conexion->query("SELECT COUNT(*) AS t FROM productos WHERE stock < 5 AND estado='activo'")->fetch_assoc()['t'] ?? 0;
+    $ultimasVentas  = $conexion->query(
+        "SELECT v.id, v.fecha, v.total, v.estado, CONCAT(c.nombre, ' ', c.apellido) AS cliente
+         FROM ventas v LEFT JOIN clientes c ON v.id_cliente = c.id
+         ORDER BY v.fecha DESC LIMIT 5"
+    )->fetch_all(MYSQLI_ASSOC);
 ?>
 
 <!-- RESUMEN RÁPIDO -->
@@ -210,3 +282,4 @@ document.addEventListener('DOMContentLoaded', async () => {
   } catch (e) {}
 });
 </script>
+<?php endif; ?>
