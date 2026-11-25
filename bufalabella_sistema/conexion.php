@@ -1,67 +1,37 @@
-<?php
-/**
- * conexion.php - Conexión MySQL + Lector .env + Cabeceras API REST
- * Bufalabella S.A.S. (Dibufala) - El Rosal, Cundinamarca
- */
-
-// Cargar variables desde archivo .env si existe (para entorno local XAMPP/Laragon)
-$envPath = __DIR__ . '/.env';
-if (file_exists($envPath)) {
-    $lineas = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lineas as $linea) {
-        $linea = trim($linea);
-        if ($linea === '' || str_starts_with($linea, '#')) continue;
-        if (strpos($linea, '=') !== false) {
-            list($claveEnv, $valorEnv) = explode('=', $linea, 2);
-            $claveEnv = trim($claveEnv);
-            $valorEnv = trim($valorEnv, " 	
-
-");
-            if (!getenv($claveEnv)) {
-                putenv("$claveEnv=$valorEnv");
-                $_ENV[$claveEnv] = $valorEnv;
-            }
-        }
+// Garantizar catálogo base de Dibufala S.A.S. y clientes si la tabla está vacía
+try {
+    $resCat = $conexion->query("SELECT COUNT(*) AS total FROM categorias");
+    if ($resCat && (int)$resCat->fetch_assoc()['total'] === 0) {
+        $conexion->query("INSERT INTO categorias (id, nombre, descripcion) VALUES
+            (1, 'Quesos Frescos y Hilados', 'Mozzarella, Burrata, Stracciatella, Bocconcini, Ovoline y Ciliegine 100% leche de búfala'),
+            (2, 'Quesos Madurados y Untables', 'Ricotta artesanal y queso campesino de búfala'),
+            (3, 'Yogures y Bebidas Lácteas', 'Yogur griego y bebidas fermentadas de leche de búfala'),
+            (4, 'Mantequillas y Cremas', 'Mantequilla artesanal y crema de leche de búfala')");
     }
+
+    $resProd = $conexion->query("SELECT COUNT(*) AS total FROM productos");
+    if ($resProd && (int)$resProd->fetch_assoc()['total'] === 0) {
+        $conexion->query("INSERT INTO productos (nombre, descripcion, categoria_id, precio, stock, marca, estado) VALUES
+            ('Burrata de Búfala Vaso 250g', 'Mozzarella fresca rellena de cuajada y crema suave, 100% leche de búfala de libre pastoreo', 1, 24500, 18, 'Dibufala', 'activo'),
+            ('Stracciatella de Búfala 500g', 'Hilos tiernos de mozzarella artesanal mezclados con crema fresca de búfala', 1, 34900, 14, 'Dibufala', 'activo'),
+            ('Bocconcini de Búfala 250g', 'Perlas de mozzarella tamaño bocado, ideales para pizzas artesanales y pasta fresca', 1, 19800, 25, 'Dibufala', 'activo'),
+            ('Ovoline de Búfala 300g', 'Mozzarella ovalada ideal para tajar con tomate, albahaca, sánduches y lasagnas', 1, 22500, 16, 'Dibufala', 'activo'),
+            ('Ciliegine de Búfala 250g', 'Esferas tamaño cereza 100% vegetarianas con cuajo vegetal, ideales para ensaladas', 1, 20500, 20, 'Dibufala', 'activo'),
+            ('Mozzarella Fior di Latte Búfala 500g', 'Bloque hilado tradicional de textura suave y fundido perfecto, bajo en colesterol', 1, 32000, 15, 'Dibufala', 'activo'),
+            ('Queso Ricotta de Búfala 300g', 'Queso fino semidulce elaborado con suero de búfala, ligero y alto en calcio', 2, 16500, 10, 'Dibufala', 'activo'),
+            ('Queso Campesino de Búfala 500g', 'Queso fresco prensado de sabor lácteo limpio elaborado en El Rosal, Cundinamarca', 2, 21000, 20, 'Dibufala', 'activo'),
+            ('Yogur Griego de Búfala Natural 500g', 'Extra cremoso, sin azúcares añadidos y alto contenido proteico natural', 3, 18500, 30, 'Dibufala', 'activo'),
+            ('Mantequilla de Búfala Artesanal 250g', 'Mantequilla pura batida lentamente, color marfil natural y rica en Omega 3', 4, 17200, 12, 'Dibufala', 'activo')");
+    }
+
+    $resCli = $conexion->query("SELECT COUNT(*) AS total FROM clientes");
+    if ($resCli && (int)$resCli->fetch_assoc()['total'] === 0) {
+        $conexion->query("INSERT INTO clientes (nombre, apellido, documento, telefono, email, direccion, estado) VALUES
+            ('Trattoria Bella Italia', 'S.A.S.', '900456789-1', '3104567890', 'compras@bellaitalia.com', 'Calle 93 # 13-24, Bogotá', 'activo'),
+            ('Mercado Orgánico', 'Sabana', '901234567-8', '3209876543', 'pedidos@mercadosabana.co', 'Km 15 Autopista Medellín, El Rosal', 'activo'),
+            ('Hotel Boutique', 'La Pradera', '830112233-4', '3157894561', 'alimentos@hotellapradera.com', 'Vereda El Rodeo, El Rosal, Cundinamarca', 'activo'),
+            ('Pizzería Artesanal', 'El Rosal', '900778899-2', '3185712967', 'pedidos@pizzeriaelrosal.com', 'Parque Principal, El Rosal, Cundinamarca', 'activo')");
+    }
+} catch (Throwable $e) {
+    // Continuar normalmente si aún no se han creado las tablas
 }
-
-// Iniciar sesión de forma segura si aún no está iniciada
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Detectar ruta base dinámicamente (funciona en localhost/tecnoshop y en dominio raíz /)
-$scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
-define('BASE_URL', rtrim($scriptDir, '/'));
-
-// Cabeceras CORS y seguridad básica
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
-
-if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
-
-// Leer credenciales desde variables de entorno
-$host    = getenv('DB_HOST')    ?: 'localhost';
-$usuario = getenv('DB_USER')    ?: 'root';
-$clave   = getenv('DB_PASS')    ?: '';
-$base    = getenv('DB_NAME')    ?: 'bufalabella_db';
-$charset = getenv('DB_CHARSET') ?: 'utf8mb4';
-
-mysqli_report(MYSQLI_REPORT_OFF);
-$conexion = @new mysqli($host, $usuario, $clave, $base);
-
-if ($conexion->connect_error) {
-    header('Content-Type: application/json; charset=utf-8');
-    http_response_code(500);
-    echo json_encode([
-        'ok'      => false,
-        'mensaje' => 'Error de conexión a la base de datos: ' . $conexion->connect_error,
-    ]);
-    exit;
-}
-
-$conexion->set_charset($charset);

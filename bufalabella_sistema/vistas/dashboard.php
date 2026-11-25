@@ -181,8 +181,9 @@ else:
 <div class="card">
   <div class="card-header">
     <h2>🧾 Últimas 5 ventas</h2>
-    <a href="<?= BASE_URL ?>/index.php?modulo=ventas&accion=listar" class="btn btn-dark btn-sm">Ver todas</a>
-  </div>
+    <a href="<?= BASE_URL ?>/index.php?modulo=ventas&accion=listar&comprar=<?= (int)$prod['id'] ?>" class="btn btn-primary btn-sm">
+  <i class="bi bi-cart-plus"></i> Comprar
+</a>
   <div class="card-body">
     <?php if (empty($ultimasVentas)): ?>
       <div class="empty-state"><p>No hay ventas registradas aún.</p></div>
